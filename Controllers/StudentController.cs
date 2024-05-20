@@ -1,7 +1,9 @@
-﻿using CollegeApp.Models;
+﻿using CollegeApp.Data;
+using CollegeApp.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace CollegeApp.Controllers
 {
@@ -10,9 +12,11 @@ namespace CollegeApp.Controllers
     public class StudentController : ControllerBase
     {
         private readonly ILogger<StudentController> _logger;
-        public StudentController(ILogger<StudentController> logger)
+        private readonly CollegeDBContext _dbContext;
+        public StudentController(ILogger<StudentController> logger, CollegeDBContext dbContext)
         {
             _logger = logger;
+            _dbContext = dbContext;
         }
 
         [HttpGet]
@@ -22,12 +26,13 @@ namespace CollegeApp.Controllers
         public ActionResult<IEnumerable<StudentDTO>> GetStudents()
         {
             _logger.LogInformation("Student Methods Started");
-            var students = CollegeRepositiory.Students.Select(s => new StudentDTO()
+            var students = _dbContext.Students.Select(s => new StudentDTO()
             {
                 Id = s.Id,
                 StudentName = s.StudentName,
                 Address = s.Address,
                 Email = s.Email,
+                DOB = s.DOB
             });
             return Ok(students);
         }
@@ -46,7 +51,7 @@ namespace CollegeApp.Controllers
                 _logger.LogWarning("Bad Request");
                 return BadRequest();
             }
-            var student = CollegeRepositiory.Students.Where(n  => n.Id == id).FirstOrDefault();
+            var student = _dbContext.Students.Where(n  => n.Id == id).FirstOrDefault();
             if (student == null)
             {
                 _logger.LogError("Student not found with given ID");
@@ -59,6 +64,8 @@ namespace CollegeApp.Controllers
                 StudentName = student.StudentName,
                 Address = student.Address,
                 Email = student.Email,
+                DOB = student.DOB
+
             };
             //ok- 200 success
             return Ok( studentDTO);
@@ -73,15 +80,16 @@ namespace CollegeApp.Controllers
             if(model == null)
                 return BadRequest();
 
-            int newId = CollegeRepositiory.Students.LastOrDefault().Id + 1;
             Student student = new Student
             {
-                Id = newId,
                 StudentName = model.StudentName,
                 Address = model.Address,
                 Email = model.Email,
+                DOB = model.DOB
+
             };
-            CollegeRepositiory.Students.Add(student);
+            _dbContext.Students.Add(student);
+            _dbContext.SaveChanges();
             model.Id = student.Id;
             //status 201 - new student details
             return CreatedAtRoute("GetStudentById", new {id = model.Id}, model);
@@ -98,13 +106,16 @@ namespace CollegeApp.Controllers
             if(model == null ||  model.Id <= 0)
                 return BadRequest();
 
-            var existingStudent = CollegeRepositiory.Students.Where(s=> s.Id  == model.Id).FirstOrDefault();
+            var existingStudent = _dbContext.Students.Where(s=> s.Id  == model.Id).FirstOrDefault();
             if (existingStudent == null)
                 return NotFound();
 
             existingStudent.StudentName = model.StudentName;
             existingStudent.Email = model.Email;
             existingStudent.Address = model.Address;
+            existingStudent.DOB = model.DOB;
+
+            _dbContext.SaveChanges();
 
             return NoContent();
         }
@@ -119,7 +130,7 @@ namespace CollegeApp.Controllers
             if (patchDocument == null || id <= 0)
                 return BadRequest();
 
-            var existingStudent = CollegeRepositiory.Students.Where(s => s.Id == id).FirstOrDefault();
+            var existingStudent = _dbContext.Students.Where(s => s.Id == id).FirstOrDefault();
             if (existingStudent == null)
                 return NotFound();
 
@@ -129,6 +140,7 @@ namespace CollegeApp.Controllers
                 StudentName = existingStudent.StudentName,
                 Email = existingStudent.Email,
                 Address = existingStudent.Address,
+                DOB = existingStudent.DOB,
             };
 
             patchDocument.ApplyTo(studentDTO, ModelState);
@@ -139,7 +151,8 @@ namespace CollegeApp.Controllers
             existingStudent.StudentName = studentDTO.StudentName;
             existingStudent.Email = studentDTO.Email;
             existingStudent.Address = studentDTO.Address;
-
+            existingStudent.DOB = studentDTO.DOB;
+            _dbContext.SaveChanges();
             return NoContent();
         }
 
@@ -158,7 +171,7 @@ namespace CollegeApp.Controllers
             {
                 return BadRequest();
             }
-            var student = CollegeRepositiory.Students.Where(n => n.StudentName == name).FirstOrDefault();
+            var student = _dbContext.Students.Where(n => n.StudentName == name).FirstOrDefault();
             if (student == null)
             {
                 // not found - 404 - client error
@@ -171,6 +184,7 @@ namespace CollegeApp.Controllers
                 StudentName = student.StudentName,
                 Address = student.Address,
                 Email = student.Email,
+                DOB = student.DOB
             };
 
             //ok- 200 success
@@ -188,13 +202,14 @@ namespace CollegeApp.Controllers
             {
                 return BadRequest();
             }
-            var student = CollegeRepositiory.Students.Where(n => n.Id == id).FirstOrDefault();
+            var student = _dbContext.Students.Where(n => n.Id == id).FirstOrDefault();
             if (student == null)
             {
                 // not found - 404 - client error
                 return NotFound($"The Student with id {id} not found");
             }
-            CollegeRepositiory.Students.Remove(student);
+            _dbContext.Students.Remove(student);
+            _dbContext.SaveChanges();
             //ok- 200 success
             return Ok(true);
         }

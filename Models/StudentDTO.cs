@@ -19,6 +19,8 @@ namespace CollegeApp.Models
         [Required]
         public string Address { get; set; }
 
+        public DateTime DOB {  get; set; }
+
  
 
 
