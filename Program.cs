@@ -12,6 +12,8 @@ builder.Services.AddControllers().AddNewtonsoftJson();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddTransient<IStudentRepository, StudentRepository>();
+builder.Services.AddTransient(typeof(ICollegeRepository<>), typeof(CollegeRepository<>));
+
 
 
 builder.Services.AddDbContext<CollegeDBContext>(options =>
