@@ -10,11 +10,17 @@ namespace CollegeApp.Data
             
         }
         public DbSet<Student> Students { get; set; }
+        public DbSet<Department> Departments { get; set; }
+
 
         //add data using code first approach 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
           modelBuilder.ApplyConfiguration(new StudentConfig()); 
+
+          modelBuilder.ApplyConfiguration(new DepartmentConfig());
+
+
         }
 
 
