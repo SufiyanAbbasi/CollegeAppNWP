@@ -14,6 +14,11 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddTransient<IStudentRepository, StudentRepository>();
 builder.Services.AddTransient(typeof(ICollegeRepository<>), typeof(CollegeRepository<>));
 
+builder.Services.AddCors(options => options.AddPolicy("MyTestCORS", policy =>
+{
+    //Allowing All Origins
+    policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+}));
 
 
 builder.Services.AddDbContext<CollegeDBContext>(options =>
@@ -32,6 +37,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("MyTestCORS");
 
 app.UseAuthorization();
 
