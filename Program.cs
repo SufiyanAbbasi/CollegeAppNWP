@@ -1,7 +1,10 @@
 using CollegeApp.Configuration;
 using CollegeApp.Data;
 using CollegeApp.Data.Repository;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +30,24 @@ builder.Services.AddDbContext<CollegeDBContext>(options =>
 });
 builder.Services.AddAutoMapper(typeof(AutoMapperConfig));
 
+//Jwt auth
+var key = Encoding.ASCII.GetBytes(builder.Configuration.GetValue<string>("JWTSecret"));
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(options =>
+{
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters()
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ValidateIssuer = false,
+        ValidateAudience = false,
+    };
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -43,5 +64,11 @@ app.UseCors("MyTestCORS");
 app.UseAuthorization();
 
 app.MapControllers();
+
+//app.UseEndpoints(endpoints =>
+//{
+//    endpoints.MapGet("api/testendpoint2",
+//        context => context.Response.WriteAsync(builder.Configuration.GetValue<string>("JWTSecret")));
+//});
 
 app.Run();
